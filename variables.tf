@@ -5,7 +5,7 @@ variable "region" {
 
 variable "vpc_cidr_block" {
   description = "CIDR block for the VPC"
-  type        = string
+  type = string
 }
 
 variable "public_subnet_1_cidr" {
