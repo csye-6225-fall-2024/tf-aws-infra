@@ -75,3 +75,78 @@ resource "aws_subnet" "private_subnet_3" {
 
   depends_on = [aws_vpc.main]
 }
+
+resource "aws_internet_gateway" "main_igw" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "main-igw"
+  }
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table" "public_route_table" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = var.public_route_destination_cidr_block
+    gateway_id = aws_internet_gateway.main_igw.id
+  }
+
+  tags = {
+    Name = "public-route-table"
+  }
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table_association" "public_route_assoc_1" {
+  subnet_id      = aws_subnet.public_subnet_1.id
+  route_table_id = aws_route_table.public_route_table.id
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table_association" "public_route_assoc_2" {
+  subnet_id      = aws_subnet.public_subnet_2.id
+  route_table_id = aws_route_table.public_route_table.id
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table_association" "public_route_assoc_3" {
+  subnet_id      = aws_subnet.public_subnet_3.id
+  route_table_id = aws_route_table.public_route_table.id
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "private-route-table"
+  }
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table_association" "private_route_assoc_1" {
+  subnet_id      = aws_subnet.private_subnet_1.id
+  route_table_id = aws_route_table.private_route_table.id
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table_association" "private_route_assoc_2" {
+  subnet_id      = aws_subnet.private_subnet_2.id
+  route_table_id = aws_route_table.private_route_table.id
+
+  depends_on = [aws_vpc.main]
+}
+
+resource "aws_route_table_association" "private_route_assoc_3" {
+  subnet_id      = aws_subnet.private_subnet_3.id
+  route_table_id = aws_route_table.private_route_table.id
+
+  depends_on = [aws_vpc.main]
+}

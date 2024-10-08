@@ -43,6 +43,11 @@ variable "availability_zones" {
   type        = list(string)
 }
 
+variable "public_route_destination_cidr_block" {
+  description = "Destination CIDR block for the public route table"
+  type        = string
+}
+
 variable "environment" {
   description = "The environment for this VPC (dev, demo)"
   type        = string
