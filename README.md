@@ -20,9 +20,11 @@ This project focuses on setting up networking resources such as Virtual Private 
 ## Terraform/Networking Setup
 1. Install Terraform on your machine.
 2. Clone the repository.
-3. Create a ```.tfvars``` file in the repository for giving the actual variable values during execution and configure with the following variables - 
+3. Skip step 4 if you want to set up infrastructure with default values.
+4. Create a ```.tfvars``` file in the repository for giving user defined variable values during execution and configure with the following variables - 
     ```
     region                              = "us-east-1"
+    vpc_name                            = "tf-aws-infra"
     vpc_cidr_block                      = "10.0.0.0/16"
     public_subnet_1_cidr                = "10.0.1.0/24"
     public_subnet_2_cidr                = "10.0.2.0/24"
@@ -35,15 +37,15 @@ This project focuses on setting up networking resources such as Virtual Private 
     environment                         = "dev"
     project_name                        = "dev-aws-project"
     ```
-4. Running the VPC - 
-   1. Use the correct profile - ```export AWS_PROFILE=<your_profile>```
-   2. Initialize terraform in your repository - ```terraform init```
-   3. Rewrite Terraform configuration files to correct format - ```terraform fmt```
-   4. Validate the configuration files - ```terraform validate```
-   5. Preview the changes to execute - ```terraform plan -var-file="<file_name.tfvars>"```
-   6. Execute the actions to create a VPC - ```terraform apply -var-file="<file_name.tfvars>"```
+5. Running the VPC - 
+   1. Use the correct profile - ```export AWS_PROFILE=<your_profile>```.
+   2. Initialize terraform in your repository - ```terraform init```.
+   3. Rewrite Terraform configuration files to correct format - ```terraform fmt```.
+   4. Validate the configuration files - ```terraform validate```.
+   5. Preview the changes to execute - ```terraform plan``` to load default values or  ```-var-file="<file_name.tfvars>"``` to load with user defined values.
+   6. Execute the actions to create a VPC - ```terraform apply``` to load default values or ```terraform apply -var-file="<file_name.tfvars>"``` to load with user defined values.
    7. Check the created VPC and its configuration on AWS.
-   8. Destroy the VPC - ```terraform destroy -var-file="<file_name.tfvars>"```
+   8. Destroy the VPC - ```terraform destroy``` or ```terraform destroy -var-file="<file_name.tfvars>"```.
 
 ## Continuous Integration (CI) with GitHub Actions for IaC Repository
 GitHub Actions workflow will run terraform fmt (recursively) and terraform validate command for each pull request raised.
