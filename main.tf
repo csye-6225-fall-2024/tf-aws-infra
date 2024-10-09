@@ -3,7 +3,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name = var.vpc_name
+    Name = "${var.project_name}-${var.environment}-vpc"
   }
 }
 
@@ -13,7 +13,7 @@ resource "aws_subnet" "public_subnet_1" {
   availability_zone       = var.availability_zones[0]
   map_public_ip_on_launch = true
   tags = {
-    Name = "public-subnet-1"
+    Name = "${var.project_name}-${var.environment}-public-subnet-1"
   }
 
   depends_on = [aws_vpc.main]
@@ -25,7 +25,7 @@ resource "aws_subnet" "public_subnet_2" {
   availability_zone       = var.availability_zones[1]
   map_public_ip_on_launch = true
   tags = {
-    Name = "public-subnet-2"
+    Name = "${var.project_name}-${var.environment}-public-subnet-2"
   }
 
   depends_on = [aws_vpc.main]
@@ -37,7 +37,7 @@ resource "aws_subnet" "public_subnet_3" {
   availability_zone       = var.availability_zones[2]
   map_public_ip_on_launch = true
   tags = {
-    Name = "public-subnet-3"
+    Name = "${var.project_name}-${var.environment}-public-subnet-3"
   }
 
   depends_on = [aws_vpc.main]
@@ -48,7 +48,7 @@ resource "aws_subnet" "private_subnet_1" {
   cidr_block        = var.private_subnet_1_cidr
   availability_zone = var.availability_zones[0]
   tags = {
-    Name = "private-subnet-1"
+    Name = "${var.project_name}-${var.environment}-private-subnet-1"
   }
 
   depends_on = [aws_vpc.main]
@@ -59,7 +59,7 @@ resource "aws_subnet" "private_subnet_2" {
   cidr_block        = var.private_subnet_2_cidr
   availability_zone = var.availability_zones[1]
   tags = {
-    Name = "private-subnet-2"
+    Name = "${var.project_name}-${var.environment}-private-subnet-2"
   }
 
   depends_on = [aws_vpc.main]
@@ -70,7 +70,7 @@ resource "aws_subnet" "private_subnet_3" {
   cidr_block        = var.private_subnet_3_cidr
   availability_zone = var.availability_zones[2]
   tags = {
-    Name = "private-subnet-3"
+    Name = "${var.project_name}-${var.environment}-private-subnet-3"
   }
 
   depends_on = [aws_vpc.main]
@@ -79,7 +79,7 @@ resource "aws_subnet" "private_subnet_3" {
 resource "aws_internet_gateway" "main_igw" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name = "main-igw"
+    Name = "${var.project_name}-${var.environment}-igw"
   }
 
   depends_on = [aws_vpc.main]
@@ -94,7 +94,7 @@ resource "aws_route_table" "public_route_table" {
   }
 
   tags = {
-    Name = "public-route-table"
+    Name = "${var.project_name}-${var.environment}-public-route-table"
   }
 
   depends_on = [aws_vpc.main]
@@ -124,7 +124,7 @@ resource "aws_route_table_association" "public_route_assoc_3" {
 resource "aws_route_table" "private_route_table" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name = "private-route-table"
+    Name = "${var.project_name}-${var.environment}-private-route-table"
   }
 
   depends_on = [aws_vpc.main]
