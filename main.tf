@@ -150,3 +150,47 @@ resource "aws_route_table_association" "private_route_assoc_3" {
 
   depends_on = [aws_vpc.main]
 }
+
+# AWS EC2
+resource "aws_instance" "web" {
+  ami           = var.ami_id
+  instance_type = var.instance_type
+  key_name      = var.key_name
+
+  subnet_id              = aws_subnet.public_subnet_1.id
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
+
+  root_block_device {
+    volume_size = var.volume_size
+    volume_type = var.volume_type
+  }
+
+  tags = {
+    Name = var.instance_name
+  }
+}
+
+# AWS EC2 Security Group Settings
+resource "aws_security_group" "app_sg" {
+  vpc_id      = aws_vpc.main.id
+  name        = var.security_group_name
+  description = "Security group for web app"
+
+  dynamic "ingress" {
+    for_each = var.service_ports
+    content {
+      from_port        = ingress.value
+      to_port          = ingress.value
+      protocol         = var.protocol
+      cidr_blocks      = var.ipv4_cidr_blocks
+      ipv6_cidr_blocks = var.ipv6_cidr_blocks
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
