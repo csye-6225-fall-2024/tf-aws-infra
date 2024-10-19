@@ -89,11 +89,6 @@ variable "instance_name" {
   type        = string
 }
 
-variable "security_group_name" {
-  description = "Name of security group"
-  type        = string
-}
-
 variable "service_ports" {
   description = "Inbound ports"
   type        = list(string)
@@ -112,4 +107,24 @@ variable "ipv4_cidr_blocks" {
 variable "ipv6_cidr_blocks" {
   description = "IPv6 CIDR"
   type        = list(string)
+}
+
+variable "db_name" {
+  description = "Database name"
+  type        = string
+}
+
+variable "db_user" {
+  description = "Database user"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+}
+
+variable "port" {
+  description = "Application port"
+  type        = number
 }
