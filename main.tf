@@ -165,6 +165,23 @@ resource "aws_instance" "web" {
     volume_type = var.volume_type
   }
 
+  user_data = base64encode(<<-EOF
+              #!/bin/bash
+              echo "DB_HOST=${aws_db_instance.csye6225.address}" >> /etc/webapp.env
+              echo "DB_NAME=${aws_db_instance.csye6225.db_name}" >> /etc/webapp.env
+              echo "DB_USER=${aws_db_instance.csye6225.username}" >> /etc/webapp.env
+              echo "DB_PASSWORD=${aws_db_instance.csye6225.password}" >> /etc/webapp.env
+              echo "PORT=${aws_db_instance.csye6225.port}" >> /etc/webapp.env
+              chmod 600 /etc/webapp.env
+              chown root:root /etc/webapp.env
+              sudo systemctl daemon-reload
+              sudo systemctl enable webapp
+              sudo systemctl start webapp
+
+              sudo systemctl status webapp
+              EOF
+  )
+
   tags = {
     Name = var.instance_name
   }
@@ -173,7 +190,7 @@ resource "aws_instance" "web" {
 # AWS EC2 Security Group Settings
 resource "aws_security_group" "app_sg" {
   vpc_id      = aws_vpc.main.id
-  name        = var.security_group_name
+  name        = "${var.project_name}-${var.environment}-app-sg"
   description = "Security group for web app"
 
   dynamic "ingress" {
@@ -192,5 +209,72 @@ resource "aws_security_group" "app_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Database Security Group
+resource "aws_security_group" "db_sg" {
+  name        = "${var.project_name}-${var.environment}-db-sg"
+  description = "Security group for RDS instances"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = var.protocol
+    security_groups = [aws_security_group.app_sg.id]
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-db-sg"
+  }
+}
+
+# RDS Parameter Group
+resource "aws_db_parameter_group" "db_pg" {
+  family = "mysql8.0"
+  name   = "${var.project_name}-${var.environment}-pg"
+
+  parameter {
+    name  = "character_set_server"
+    value = "utf8mb4"
+  }
+
+  parameter {
+    name  = "collation_server"
+    value = "utf8mb4_unicode_ci"
+  }
+}
+
+# RDS Subnet Group
+resource "aws_db_subnet_group" "private_subnet_group" {
+  name       = "${var.project_name}-${var.environment}-private-subnet-group"
+  subnet_ids = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id, aws_subnet.private_subnet_3.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-private-subnet-group"
+  }
+}
+
+# RDS Instance
+resource "aws_db_instance" "csye6225" {
+  identifier             = "csye6225"
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 20
+  db_name                = var.db_name
+  username               = var.db_user
+  password               = var.db_password
+  port                   = var.port
+  db_subnet_group_name   = aws_db_subnet_group.private_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+  parameter_group_name   = aws_db_parameter_group.db_pg.name
+  publicly_accessible    = false
+  skip_final_snapshot    = true
+  multi_az               = false
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-rds"
   }
 }
