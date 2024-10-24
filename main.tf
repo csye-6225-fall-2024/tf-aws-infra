@@ -199,8 +199,9 @@ resource "aws_security_group" "db_sg" {
 
 # RDS Subnet Group
 resource "aws_db_subnet_group" "private_subnet_group" {
-  name       = "${var.project_name}-${var.environment}-private-subnet-group"
-  subnet_ids = aws_subnet.private_subnets[*].id
+  name        = "${var.project_name}-${var.environment}-private-subnet-group"
+  description = "Private subnet group for RDS instances"
+  subnet_ids  = aws_subnet.private_subnets[*].id
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private-subnet-group"
@@ -209,8 +210,14 @@ resource "aws_db_subnet_group" "private_subnet_group" {
 
 # RDS Parameter Group
 resource "aws_db_parameter_group" "db_pg" {
-  family = "mysql8.0"
-  name   = "${var.project_name}-${var.environment}-pg"
+  family      = "mysql8.0"
+  name        = "${var.project_name}-${var.environment}-pg"
+  description = "Parameter group for RDS instances"
+
+  parameter {
+    name  = "max_connections"
+    value = "100"
+  }
 
   parameter {
     name  = "character_set_server"
