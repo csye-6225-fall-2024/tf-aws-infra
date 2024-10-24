@@ -25,14 +25,9 @@ This project focuses on setting up networking resources such as Virtual Private 
     ```
     # environment settings
     region                              = "us-east-1"
-    vpc_name                            = "tf-aws-infra"
     vpc_cidr_block                      = "10.0.0.0/16"
-    public_subnet_1_cidr                = "10.0.1.0/24"
-    public_subnet_2_cidr                = "10.0.2.0/24"
-    public_subnet_3_cidr                = "10.0.3.0/24"
-    private_subnet_1_cidr               = "10.0.4.0/24"
-    private_subnet_2_cidr               = "10.0.5.0/24"
-    private_subnet_3_cidr               = "10.0.6.0/24"
+    public_subnet_cidrs                 = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+    private_subnet_cidrs                = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
     availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]
     public_route_destination_cidr_block = "0.0.0.0/0"
     environment                         = "<your_environment>"
@@ -50,8 +45,19 @@ This project focuses on setting up networking resources such as Virtual Private 
     protocol            = "tcp"
     ipv4_cidr_blocks    = ["0.0.0.0/0"]
     ipv6_cidr_blocks    = ["::/0"]
+
+    # aws rds settings
+    db_identifier        = "<your_custom_identifier>"
+    db_engine            = "mysql"
+    db_engine_version    = "8.0"
+    db_instance_class    = "db.t3.micro"
+    db_allocated_storage = 20
+    db_name              = "<your_database_name>"
+    db_user              = "<your_database_user>"
+    db_password          = "<your_database_password>"
+    db_port              = 3306
     ```
-5. Running the VPC and the EC2 instance - 
+5. Running the VPC, EC2, and RDS instance - 
    1. Use the correct profile - ```export AWS_PROFILE=<your_profile>```.
    2. Initialize terraform in your repository - ```terraform init```.
    3. Rewrite Terraform configuration files to correct format - ```terraform fmt```.
