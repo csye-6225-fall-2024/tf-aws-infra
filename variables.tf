@@ -8,34 +8,14 @@ variable "vpc_cidr_block" {
   type        = string
 }
 
-variable "public_subnet_1_cidr" {
-  description = "CIDR block for the first public subnet"
-  type        = string
+variable "public_subnet_cidrs" {
+  description = "List of CIDR blocks for public subnets"
+  type        = list(string)
 }
 
-variable "public_subnet_2_cidr" {
-  description = "CIDR block for the second public subnet"
-  type        = string
-}
-
-variable "public_subnet_3_cidr" {
-  description = "CIDR block for the third public subnet"
-  type        = string
-}
-
-variable "private_subnet_1_cidr" {
-  description = "CIDR block for the first private subnet"
-  type        = string
-}
-
-variable "private_subnet_2_cidr" {
-  description = "CIDR block for the second private subnet"
-  type        = string
-}
-
-variable "private_subnet_3_cidr" {
-  description = "CIDR block for the third private subnet"
-  type        = string
+variable "private_subnet_cidrs" {
+  description = "List of CIDR blocks for private subnets"
+  type        = list(string)
 }
 
 variable "availability_zones" {
@@ -109,6 +89,31 @@ variable "ipv6_cidr_blocks" {
   type        = list(string)
 }
 
+variable "db_identifier" {
+  description = "Database identifier"
+  type        = string
+}
+
+variable "db_engine" {
+  description = "Database engine"
+  type        = string
+}
+
+variable "db_engine_version" {
+  description = "Database version"
+  type        = string
+}
+
+variable "db_instance_class" {
+  description = "Database instance class"
+  type        = string
+}
+
+variable "db_allocated_storage" {
+  description = "Database allocated storage"
+  type        = number
+}
+
 variable "db_name" {
   description = "Database name"
   type        = string
@@ -124,7 +129,7 @@ variable "db_password" {
   type        = string
 }
 
-variable "port" {
+variable "db_port" {
   description = "Application port"
   type        = number
 }
