@@ -133,3 +133,28 @@ variable "db_port" {
   description = "Application port"
   type        = number
 }
+
+variable "hosted_zone_id" {
+  description = "Route53 Hosted Zone ID"
+  type        = string
+}
+
+variable "domain_name" {
+  description = "Route53 Domain Name"
+  type        = string
+}
+
+variable "record_type" {
+  description = "Route53 Record Type"
+  type        = string
+}
+
+variable "record_ttl" {
+  description = "Route53 Record TTL"
+  type        = number
+}
+
+variable "log_group_name" {
+  description = "Log Group Name"
+  type        = string
+}
