@@ -103,6 +103,8 @@ resource "aws_instance" "web" {
   subnet_id              = aws_subnet.public_subnets[0].id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
+  iam_instance_profile = aws_iam_instance_profile.cloudwatch_profile.name
+
   root_block_device {
     volume_size = var.volume_size
     volume_type = var.volume_type
@@ -116,13 +118,23 @@ resource "aws_instance" "web" {
               echo "DB_PASSWORD=${aws_db_instance.csye6225.password}" >> /etc/webapp.env
               echo "DB_PORT=${aws_db_instance.csye6225.port}" >> /etc/webapp.env
               echo "PORT=${var.service_ports[3]}" >> /etc/webapp.env
+              echo "S3_BUCKET_NAME=${aws_s3_bucket.webapp_bucket.id}" >> /etc/webapp.env
               chmod 600 /etc/webapp.env
               chown root:root /etc/webapp.env
+
               sudo systemctl daemon-reload
+
+              sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+              -a fetch-config \
+              -m ec2 \
+              -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+              -s
+
+              systemctl enable amazon-cloudwatch-agent
+              systemctl start amazon-cloudwatch-agent
+
               sudo systemctl enable webapp
               sudo systemctl start webapp
-
-              sudo systemctl status webapp
               EOF
   )
 
@@ -228,4 +240,130 @@ resource "aws_db_parameter_group" "db_pg" {
     name  = "collation_server"
     value = "utf8mb4_unicode_ci"
   }
+}
+
+# IAM Role for CloudWatch Agent
+resource "aws_iam_role" "cloudwatch_agent_role" {
+  name = "${var.project_name}-${var.environment}-cloudwatch-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action    = "sts:AssumeRole",
+        Principal = { Service = "ec2.amazonaws.com" },
+        Effect    = "Allow"
+      }
+    ]
+  })
+}
+
+# CloudWatch IAM Policy Update
+resource "aws_iam_policy" "cloudwatch_agent_policy" {
+  name        = "${var.project_name}-${var.environment}-cloudwatch-policy"
+  description = "Policy for CloudWatch agent with access to logs, metrics, S3, and RDS"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:PutLogEvents",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:DescribeLogStreams",
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricData",
+          "cloudwatch:PutDashboard"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:DeleteObject"
+        ],
+        Resource = [
+          aws_s3_bucket.webapp_bucket.arn,
+          "${aws_s3_bucket.webapp_bucket.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:Connect"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Attach Policy to Role
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
+  role       = aws_iam_role.cloudwatch_agent_role.name
+  policy_arn = aws_iam_policy.cloudwatch_agent_policy.arn
+}
+
+# IAM Instance Profile for CloudWatch Agent Role
+resource "aws_iam_instance_profile" "cloudwatch_profile" {
+  name = "${var.project_name}-${var.environment}-cloudwatch-instance-profile"
+  role = aws_iam_role.cloudwatch_agent_role.name
+}
+
+resource "aws_cloudwatch_log_group" "webapp_log_group" {
+  name              = var.log_group_name
+  retention_in_days = 30
+}
+
+# Generate a UUID for the S3 bucket name
+resource "random_uuid" "s3_bucket_name" {}
+
+# S3 Bucket for Attachments
+resource "aws_s3_bucket" "webapp_bucket" {
+  bucket        = random_uuid.s3_bucket_name.result
+  force_destroy = true
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-attachments-bucket"
+  }
+}
+
+# S3 Bucket Server-Side Encryption Configuration
+resource "aws_s3_bucket_server_side_encryption_configuration" "webapp_bucket_encryption" {
+  bucket = aws_s3_bucket.webapp_bucket.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# S3 Bucket Lifecycle Configuration
+resource "aws_s3_bucket_lifecycle_configuration" "webapp_bucket_lifecycle" {
+  bucket = aws_s3_bucket.webapp_bucket.bucket
+
+  rule {
+    id     = "transition-to-standard-ia"
+    status = "Enabled"
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+}
+
+# Route 53 Zone for Domain
+resource "aws_route53_record" "webapp_a_record" {
+  zone_id = var.hosted_zone_id
+  name    = var.domain_name
+  type    = var.record_type
+  ttl     = var.record_ttl
+  records = [aws_instance.web.public_ip]
 }
