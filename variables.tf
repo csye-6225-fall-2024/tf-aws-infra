@@ -153,8 +153,3 @@ variable "record_ttl" {
   description = "Route53 Record TTL"
   type        = number
 }
-
-variable "log_group_name" {
-  description = "Log Group Name"
-  type        = string
-}
