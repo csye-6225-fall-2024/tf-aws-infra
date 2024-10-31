@@ -1,5 +1,5 @@
 # Terraform AWS Infrastructure
-This project focuses on setting up networking resources such as Virtual Private Cloud (VPC), Internet Gateway, Route Table, Routes, EC2 instance, and Security Group using Terraform for infrastructure setup and teardown. 
+This project focuses on setting up networking resources such as VPC, Internet Gateway, Route Table, Routes, EC2 instance, Security Groups, RDS, S3, Route43 and Cloudwatch using Terraform for infrastructure setup and teardown. 
 
 ## Set up AWS Organization and User
 1. Login to your root AWS account and navigate to Organizations.
@@ -56,8 +56,14 @@ This project focuses on setting up networking resources such as Virtual Private 
     db_user              = "<your_database_user>"
     db_password          = "<your_database_password>"
     db_port              = 3306
+
+    # route53 settings
+    hosted_zone_id = "<your_hosted_zone_id>"
+    domain_name    = "<your_domain_name.tld>"
+    record_type    = "A"
+    record_ttl     = 60
     ```
-5. Running the VPC, EC2, and RDS instance - 
+5. Running the VPC, EC2, and RDS instances with S3 bucket - 
    1. Use the correct profile - ```export AWS_PROFILE=<your_profile>```.
    2. Initialize terraform in your repository - ```terraform init```.
    3. Rewrite Terraform configuration files to correct format - ```terraform fmt```.
@@ -66,7 +72,7 @@ This project focuses on setting up networking resources such as Virtual Private 
    6. Execute the actions to create a VPC and an EC2 instance - ```terraform apply``` to load default values or ```terraform apply -var-file="<file_name.tfvars>"``` to load with user defined values.
    7. Check the created VPC and its configuration on AWS.
    8. Check the created EC2 instance and test it's endpoints.
-   9. Destroy the VPC and the EC2 instance - ```terraform destroy``` or ```terraform destroy -var-file="<file_name.tfvars>"```.
+   9. Destroy the VPC and the instance - ```terraform destroy``` or ```terraform destroy -var-file="<file_name.tfvars>"```.
 
 ## Continuous Integration (CI) with GitHub Actions for IaC Repository
 GitHub Actions workflow will run terraform fmt (recursively) and terraform validate command for each pull request raised.
