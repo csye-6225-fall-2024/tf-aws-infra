@@ -90,24 +90,101 @@ resource "aws_route_table_association" "private_subnet_routes" {
   depends_on = [aws_vpc.main]
 }
 
-locals {
-  app_port = var.service_ports[3]
+# Load Balancer Security Group
+resource "aws_security_group" "lb_sg" {
+  name        = "${var.project_name}-${var.environment}-lb-sg"
+  description = "Security group for Application Load Balancer"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = var.ipv4_cidr_blocks
+    ipv6_cidr_blocks = var.ipv6_cidr_blocks
+  }
+
+  ingress {
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = var.ipv4_cidr_blocks
+    ipv6_cidr_blocks = var.ipv6_cidr_blocks
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = var.ipv4_cidr_blocks
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-lb-sg"
+  }
 }
 
-# AWS EC2
-resource "aws_instance" "web" {
-  ami           = var.ami_id
+# AWS EC2 Security Group Settings
+resource "aws_security_group" "app_sg" {
+  vpc_id      = aws_vpc.main.id
+  name        = "${var.project_name}-${var.environment}-app-sg"
+  description = "Security group for web app"
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = var.ipv4_cidr_blocks
+    ipv6_cidr_blocks = var.ipv6_cidr_blocks
+  }
+
+  ingress {
+    from_port       = var.app_port
+    to_port         = var.app_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.lb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = var.ipv4_cidr_blocks
+  }
+}
+
+# RDS Security Group
+resource "aws_security_group" "db_sg" {
+  name        = "${var.project_name}-${var.environment}-db-sg"
+  description = "Security group for RDS instances"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = var.db_port
+    to_port         = var.db_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_sg.id]
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-db-sg"
+  }
+}
+
+# Launch Template
+resource "aws_launch_template" "app_lt" {
+  name          = "${var.project_name}-${var.environment}-lt"
+  image_id      = var.ami_id
   instance_type = var.instance_type
   key_name      = var.key_name
 
-  subnet_id              = aws_subnet.public_subnets[0].id
-  vpc_security_group_ids = [aws_security_group.app_sg.id]
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.app_sg.id]
+  }
 
-  iam_instance_profile = aws_iam_instance_profile.cloudwatch_profile.name
-
-  root_block_device {
-    volume_size = var.volume_size
-    volume_type = var.volume_type
+  iam_instance_profile {
+    name = aws_iam_instance_profile.cloudwatch_profile.name
   }
 
   user_data = base64encode(<<-EOF
@@ -117,7 +194,7 @@ resource "aws_instance" "web" {
               echo "DB_USER=${aws_db_instance.csye6225.username}" >> /etc/webapp.env
               echo "DB_PASSWORD=${aws_db_instance.csye6225.password}" >> /etc/webapp.env
               echo "DB_PORT=${aws_db_instance.csye6225.port}" >> /etc/webapp.env
-              echo "PORT=${var.service_ports[3]}" >> /etc/webapp.env
+              echo "PORT=${var.app_port}" >> /etc/webapp.env
               echo "S3_BUCKET_NAME=${aws_s3_bucket.webapp_bucket.id}" >> /etc/webapp.env
               chmod 600 /etc/webapp.env
               chown root:root /etc/webapp.env
@@ -138,33 +215,140 @@ resource "aws_instance" "web" {
               EOF
   )
 
-  tags = {
-    Name = var.instance_name
-  }
-}
-
-# AWS EC2 Security Group Settings
-resource "aws_security_group" "app_sg" {
-  vpc_id      = aws_vpc.main.id
-  name        = "${var.project_name}-${var.environment}-app-sg"
-  description = "Security group for web app"
-
-  dynamic "ingress" {
-    for_each = var.service_ports
-    content {
-      from_port        = ingress.value
-      to_port          = ingress.value
-      protocol         = var.protocol
-      cidr_blocks      = var.ipv4_cidr_blocks
-      ipv6_cidr_blocks = var.ipv6_cidr_blocks
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size = var.volume_size
+      volume_type = var.volume_type
     }
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "${var.project_name}-${var.environment}-instance"
+    }
+  }
+}
+
+# Auto Scaling Group
+resource "aws_autoscaling_group" "app_asg" {
+  name                = "${var.project_name}-${var.environment}-asg"
+  desired_capacity    = var.asg_desired_capacity
+  max_size            = var.asg_max_size
+  min_size            = var.asg_min_size
+  target_group_arns   = [aws_lb_target_group.app_tg.arn]
+  vpc_zone_identifier = aws_subnet.public_subnets[*].id
+
+  launch_template {
+    id      = aws_launch_template.app_lt.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.project_name}-${var.environment}-asg"
+    propagate_at_launch = true
+  }
+
+  default_cooldown = 60
+}
+
+# Auto Scaling Policies
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "${var.project_name}-${var.environment}-scale-up"
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 150
+  policy_type            = "SimpleScaling"
+  autoscaling_group_name = aws_autoscaling_group.app_asg.name
+}
+
+resource "aws_cloudwatch_metric_alarm" "cpu_alarm_high" {
+  alarm_name          = "${var.project_name}-${var.environment}-cpu-alarm-high"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = var.high_threshold
+  alarm_description   = "This metric monitors ec2 cpu utilization"
+  alarm_actions       = [aws_autoscaling_policy.scale_up.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.app_asg.name
+  }
+}
+
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "${var.project_name}-${var.environment}-scale-down"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 150
+  policy_type            = "SimpleScaling"
+  autoscaling_group_name = aws_autoscaling_group.app_asg.name
+}
+
+resource "aws_cloudwatch_metric_alarm" "cpu_alarm_low" {
+  alarm_name          = "${var.project_name}-${var.environment}-cpu-alarm-low"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = var.low_threshold
+  alarm_description   = "This metric monitors ec2 cpu utilization"
+  alarm_actions       = [aws_autoscaling_policy.scale_down.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.app_asg.name
+  }
+}
+
+# Application Load Balancer
+resource "aws_lb" "app_lb" {
+  name               = "${var.project_name}-${var.environment}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.lb_sg.id]
+  subnets            = aws_subnet.public_subnets[*].id
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-alb"
+  }
+}
+
+# ALB Target Group
+resource "aws_lb_target_group" "app_tg" {
+  name     = "${var.project_name}-${var.environment}-tg"
+  port     = var.app_port
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 30
+    matcher             = "200"
+    path                = "/healthz"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 2
+  }
+}
+
+# ALB Listener
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.app_lb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app_tg.arn
   }
 }
 
@@ -188,24 +372,6 @@ resource "aws_db_instance" "csye6225" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-rds"
-  }
-}
-
-# RDS Security Group
-resource "aws_security_group" "db_sg" {
-  name        = "${var.project_name}-${var.environment}-db-sg"
-  description = "Security group for RDS instances"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = var.db_port
-    to_port         = var.db_port
-    protocol        = var.protocol
-    security_groups = [aws_security_group.app_sg.id]
-  }
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-db-sg"
   }
 }
 
@@ -359,6 +525,9 @@ resource "aws_route53_record" "webapp_a_record" {
   zone_id = var.hosted_zone_id
   name    = var.domain_name
   type    = var.record_type
-  ttl     = var.record_ttl
-  records = [aws_instance.web.public_ip]
+  alias {
+    name                   = aws_lb.app_lb.dns_name
+    zone_id                = aws_lb.app_lb.zone_id
+    evaluate_target_health = true
+  }
 }
