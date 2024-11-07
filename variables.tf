@@ -64,18 +64,33 @@ variable "volume_type" {
   type        = string
 }
 
-variable "instance_name" {
-  description = "Name of EC2 instance"
+variable "app_port" {
+  description = "Application port"
   type        = string
 }
 
-variable "service_ports" {
-  description = "Inbound ports"
-  type        = list(string)
+variable "asg_desired_capacity" {
+  description = "Application port"
+  type        = number
 }
 
-variable "protocol" {
-  description = "TCP protocol declaration"
+variable "asg_max_size" {
+  description = "Application port"
+  type        = number
+}
+
+variable "asg_min_size" {
+  description = "Application port"
+  type        = number
+}
+
+variable "low_threshold" {
+  description = "Application port"
+  type        = string
+}
+
+variable "high_threshold" {
+  description = "Application port"
   type        = string
 }
 
@@ -147,9 +162,4 @@ variable "domain_name" {
 variable "record_type" {
   description = "Route53 Record Type"
   type        = string
-}
-
-variable "record_ttl" {
-  description = "Route53 Record TTL"
-  type        = number
 }
