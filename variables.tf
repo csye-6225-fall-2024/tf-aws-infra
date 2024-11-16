@@ -69,6 +69,16 @@ variable "app_port" {
   type        = string
 }
 
+variable "launch_template_name" {
+  description = "Name for launch template"
+  type        = string
+}
+
+variable "asg_name" {
+  description = "Name for auto scaling group"
+  type        = string
+}
+
 variable "asg_desired_capacity" {
   description = "Application port"
   type        = number
@@ -161,5 +171,15 @@ variable "domain_name" {
 
 variable "record_type" {
   description = "Route53 Record Type"
+  type        = string
+}
+
+variable "SENDGRID_API_KEY" {
+  description = "API Key for Sendgrid mailing service"
+  type        = string
+}
+
+variable "sender_email" {
+  description = "Email ID for sending emails"
   type        = string
 }
