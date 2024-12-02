@@ -165,7 +165,7 @@ resource "aws_launch_template" "app_lt" {
   image_id      = var.ami_id
   instance_type = var.instance_type
   key_name      = var.key_name
-  depends_on = [aws_kms_key.ec2_key]
+  depends_on    = [aws_kms_key.ec2_key]
 
   network_interfaces {
     associate_public_ip_address = true
@@ -588,7 +588,7 @@ resource "aws_s3_bucket" "webapp_bucket" {
 
 # S3 Bucket Server-Side Encryption Configuration
 resource "aws_s3_bucket_server_side_encryption_configuration" "webapp_bucket_encryption" {
-  bucket = aws_s3_bucket.webapp_bucket.bucket
+  bucket     = aws_s3_bucket.webapp_bucket.bucket
   depends_on = [aws_kms_key.s3_key]
 
   rule {
@@ -804,39 +804,39 @@ resource "aws_kms_key" "ec2_key" {
         Resource = "*"
       },
       {
-        "Sid": "Allow service-linked role use of the customer managed key",
-        "Effect": "Allow",
-        "Principal": {
-            "AWS": [
-                "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
-            ]
+        "Sid" : "Allow service-linked role use of the customer managed key",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+          ]
         },
-        "Action": [
-            "kms:Encrypt",
-            "kms:Decrypt",
-            "kms:ReEncrypt*",
-            "kms:GenerateDataKey*",
-            "kms:DescribeKey"
+        "Action" : [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "Allow attachment of persistent resources",
-        "Effect": "Allow",
-        "Principal": {
-            "AWS": [
-                "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
-            ]
+        "Sid" : "Allow attachment of persistent resources",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+          ]
         },
-        "Action": [
-            "kms:CreateGrant"
+        "Action" : [
+          "kms:CreateGrant"
         ],
-        "Resource": "*",
-        "Condition": {
-            "Bool": {
-                "kms:GrantIsForAWSResource": true
-            }
+        "Resource" : "*",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : true
           }
+        }
       }
     ]
   })
@@ -857,40 +857,40 @@ resource "aws_kms_key" "rds_key" {
     Version = "2012-10-17"
     Statement = [
       {
-        "Sid": "AllowRootAccountFullAccess",
-        "Effect": "Allow",
-        "Principal": {
-          "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        "Sid" : "AllowRootAccountFullAccess",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        "Action": "kms:*",
-        "Resource": "*"
+        "Action" : "kms:*",
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowRDSServiceUse",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "rds.amazonaws.com"
+        "Sid" : "AllowRDSServiceUse",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "rds.amazonaws.com"
         },
-        "Action": [
+        "Action" : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:ReEncrypt*",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowRDSCreateGrant",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "rds.amazonaws.com"
+        "Sid" : "AllowRDSCreateGrant",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "rds.amazonaws.com"
         },
-        "Action": "kms:CreateGrant",
-        "Resource": "*",
-        "Condition": {
-          "Bool": {
-            "kms:GrantIsForAWSResource": true
+        "Action" : "kms:CreateGrant",
+        "Resource" : "*",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : true
           }
         }
       }
@@ -913,40 +913,40 @@ resource "aws_kms_key" "s3_key" {
     Version = "2012-10-17"
     Statement = [
       {
-        "Sid": "AllowRootAccountFullAccess",
-        "Effect": "Allow",
-        "Principal": {
-          "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        "Sid" : "AllowRootAccountFullAccess",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        "Action": "kms:*",
-        "Resource": "*"
+        "Action" : "kms:*",
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowS3ServiceUse",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "s3.amazonaws.com"
+        "Sid" : "AllowS3ServiceUse",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "s3.amazonaws.com"
         },
-        "Action": [
+        "Action" : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:ReEncrypt*",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowS3CreateGrant",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "s3.amazonaws.com"
+        "Sid" : "AllowS3CreateGrant",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "s3.amazonaws.com"
         },
-        "Action": "kms:CreateGrant",
-        "Resource": "*",
-        "Condition": {
-          "Bool": {
-            "kms:GrantIsForAWSResource": true
+        "Action" : "kms:CreateGrant",
+        "Resource" : "*",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : true
           }
         }
       }
@@ -969,40 +969,40 @@ resource "aws_kms_key" "secrets_key" {
     Version = "2012-10-17"
     Statement = [
       {
-        "Sid": "AllowRootAccountFullAccess",
-        "Effect": "Allow",
-        "Principal": {
-          "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        "Sid" : "AllowRootAccountFullAccess",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         },
-        "Action": "kms:*",
-        "Resource": "*"
+        "Action" : "kms:*",
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowSecretsManagerServiceUse",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "secretsmanager.amazonaws.com"
+        "Sid" : "AllowSecretsManagerServiceUse",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "secretsmanager.amazonaws.com"
         },
-        "Action": [
+        "Action" : [
           "kms:Encrypt",
           "kms:Decrypt",
           "kms:ReEncrypt*",
           "kms:GenerateDataKey*",
           "kms:DescribeKey"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowSecretsManagerCreateGrant",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "secretsmanager.amazonaws.com"
+        "Sid" : "AllowSecretsManagerCreateGrant",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "secretsmanager.amazonaws.com"
         },
-        "Action": "kms:CreateGrant",
-        "Resource": "*",
-        "Condition": {
-          "Bool": {
-            "kms:GrantIsForAWSResource": true
+        "Action" : "kms:CreateGrant",
+        "Resource" : "*",
+        "Condition" : {
+          "Bool" : {
+            "kms:GrantIsForAWSResource" : true
           }
         }
       }
