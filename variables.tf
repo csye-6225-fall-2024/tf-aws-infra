@@ -149,10 +149,10 @@ variable "db_user" {
   type        = string
 }
 
-variable "db_password" {
-  description = "Database password"
-  type        = string
-}
+# variable "db_password" {
+#   description = "Database password"
+#   type        = string
+# }
 
 variable "db_port" {
   description = "Application port"
@@ -171,6 +171,11 @@ variable "domain_name" {
 
 variable "record_type" {
   description = "Route53 Record Type"
+  type        = string
+}
+
+variable "lambda_file_path" {
+  description = "File path for Lambda function"
   type        = string
 }
 
