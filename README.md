@@ -1,5 +1,5 @@
 # Terraform AWS Infrastructure
-This project focuses on setting up networking resources such as VPC, Internet Gateway, Route Table, Routes, EC2 instance, Security Groups, RDS, S3, Route43 and Cloudwatch using Terraform for infrastructure setup and teardown. 
+This project focuses on setting up networking resources such as VPC, Internet Gateway, Route Table, Routes, EC2 instance, Security Groups, RDS, S3, Route53 and Cloudwatch using Terraform for infrastructure setup and teardown. 
 
 ## Set up AWS Organization and User
 1. Login to your root AWS account and navigate to Organizations.
